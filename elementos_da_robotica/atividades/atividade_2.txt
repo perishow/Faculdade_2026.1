@@ -1,0 +1,31 @@
+1 - Translation and Rotation:
+
+	No simulador, a posição é expresssada em metros, enquanto a orientação é expressada em Euler XYZ (coordenadas).
+
+	As operações efetuadas no componente pai afeta os componentes filhos. Isso se aplica à rotação e translação.
+
+	É possível alinhar um objeto com outro utilizando o mecanismo de copy & paste. Fazemos isso copiando as coordenadas de um objeto e colando em outro.
+
+2 - Using translation and Rotation Operations:
+	
+	É possível efetuar a translação utilizando o mouse ou de forma paramétrica.
+
+	É possível fixar um dos eixos na translação via mouse.
+
+	A translação paramétrica pode ser efetuada em relação ao componente pai ou com referência global.
+
+	< Demonstração de alinhamento entre objetos >
+
+	< Demonstração de translação hierarquica >
+
+3 - Object Hierarchy Relations:
+	
+	Objetos puros são melhores para objetos dynamic e respondable. Isso ocorre porque todas as colisões e simulações físicas são aplicadas à objetos puros.
+
+	Objetos não puros são melhores para objetos static e non-respondable.
+
+	Geralmente se coloca um objeto não puro como filho de um objeto puro para executar as simulações físicas com o objeto puro e a aparência com o objeto não puro.
+
+	< Mostragem da hierarquia do braço robótico (serial link) >
+
+	< Mostragem da hierarquia do carro robótico > 

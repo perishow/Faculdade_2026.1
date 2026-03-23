@@ -1,0 +1,34 @@
+GPIO ( General Purpose Input/Output) {
+  São responsáveis pela comunicação de entrada e saída mais simples do dispositivo.
+
+  São acessados a partir de registradores, tanto para transmissão de informação, quanto para configuração.
+
+  As portas possuem registradores que repassam a informação da memória para os terminais físicos.
+  Um GPIO possui várias portas (port).
+}
+
+Periféricos {
+  Podem ser internos ao microcontrolador, embutidos no mesmo chip.
+  Podem ser circuitos externos com funções próprias.
+  Exemplos de periféricos são: Sensores de todo o tipo, antenas, telas de output.
+}
+
+Output {
+  Pode ser com open drain ou com a estrutura push pull, que utiliza 2 transistores. A estrutura push pull é mais rápida.
+  A vantagem do dreno aberto seria a possibilidade de conexão de 2 conexões de dreno aberto ao mesmo barramento sem riscos de curto circuito.
+
+}
+
+Biblioteca de IO {
+  A biblioteca IO é responsável por implementar as funções de acesso aos terminais físicos do microcontrolador.
+  Isso é feito através de funções.
+  ex:
+  while(1) {
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
+      HAL_Delay(500);
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_RESET);
+      HAL_Delay(500);
+      
+    }
+}
+

@@ -1,0 +1,49 @@
+1.a) 
+	Os tamanhos dos tipos de dados em sistemas de 32 bits são:
+	char: 8 bits
+	int: 32 bits
+	float: 32 bits
+	double: 64 bits
+	long: 32 bits
+
+1.b) 
+	Os sistemas embarcados se caracterizam por possuir recursos em quantidades limitadas. Por isso, é importante saber 
+   	os tamanhos dos dados que estão sendo manipulados a fim de evitar erros de estouro de memoria ou acessos indevidos
+   	à espaços de memória.
+
+2.a) 
+	O modificador "volatile" é utilizado na hora de declarar variaveis e é muito importante para sistemas embarcados que
+	precisam lidar com o acesso à registradores. Esse modificador indica ao compilador que o valor da variável em questão
+	deve ser recarregado toda vez que ela for solicitada. Isso faz sentido em sistemas embarcados pois geralmente os valo-
+	res de variáveis são provenientes de registradores que podem ter seu valor alterado de forma não explícita por fatores
+	externos.
+
+2.b)
+	volatile int *status_reg;
+
+3.a)
+	REG = REG | 0b00001000
+
+3.b)
+	REG = REG & 0b11011111
+
+3.c)
+	if (REG & 0b00000100) {
+		// codigo
+	}
+	else {
+		// outro codigo
+	}
+
+	Esse bloco de código funciona porque, caso o bit 2 esteja setado, o resultado é maior que 0, que é interpretado como True
+	em C. Enquanto que caso o bit 2 não esteja setado o resultado é 0, que é interpretado como False em C.
+
+4.a)
+	Um ponteiro em C é uma variável que, ao invés de armazenar um valor, armazena uma posição na memória. Eles são importantes
+	em sistemas embarcados pois os periféricos físicos do microcontrolador são mapeados em posições de memória, então a unica
+	forma de acessar os registradores responsáveis pelos periféricos é se utilizando de ponteiros.
+
+4.b) 
+	import <stdint.h>
+	volatile uint8_t *periferico = (volatile uint_8 *) 0b40021000;
+	
