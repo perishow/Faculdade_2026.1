@@ -1,0 +1,3 @@
+void printa_legal() {
+    printf("printa_legal\n");
+  }

@@ -1,0 +1,68 @@
+1)
+  A Diretiva "#include" serve para importar código de outro arquivo para dentro do seu. Ela funciona fazendo
+  com que o pré processador copie o arquivo importado inteiro na linha em que o #include ocorre, trazendo as-
+  sim as funções definidas no arquivo copiado para o escopo do arquivo principal.
+  Enquanto isso, o "#define" serve para criar macros de forma mais fácil. Ele também atua utilizando o pré 
+  processado mas utilizando de uma lógica de localizar e substituir, onde o pré processador substitui todas
+  as citações do macro definido e substitui pelo valor literal especificado.
+
+  exemplo de código:
+
+#include <stdio.h>
+
+#define PI 3.14159
+
+float circunferencia(float raio) {
+  return 2 * PI * raio;
+}
+  
+int main() {
+  float raio = 2.0;
+  float circu = circunferencia(2);
+
+  printf("A cirfunferencia de %d é %f\n", raio, circu);
+
+  return 0;
+}
+
+2)
+  #define MODO_LCD
+  
+  int main() {
+    #ifdef MODO_LCD
+
+    // Aqui vai o código referente à manipulação do LCD
+
+    #else
+
+    // Aqui vai o código referente à manipulação Serial
+
+    #endif
+  }
+
+3)
+  matematica.h-------------------------------------------------------------------------------------------------
+    
+    #ifndef MATEMATICA_H
+    #define MATEMATICA_H
+
+    extern float PI;
+
+    float circunferencia(float raio);
+    
+    #endif 
+  ------------------------------------------------------------------------------------------------------------
+
+  matematica.c------------------------------------------------------------------------------------------------
+    
+    #include "matematica.h"
+
+    float PI = 3.14159
+
+    float circunferencia(float raio) {
+        return 2.0 * PI * raio;
+      }
+
+  ------------------------------------------------------------------------------------------------------------
+
+  
