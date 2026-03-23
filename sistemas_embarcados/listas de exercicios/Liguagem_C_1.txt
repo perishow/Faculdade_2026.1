@@ -12,7 +12,7 @@
    	à espaços de memória.
 
 2.a) 
-	O modificador "volatile" é utilizado na hora de declarar variaveis e é muito importante para sistemas embarcados que
+	O modificador "volatile" é utilizado na hora de declarar variáveis e é muito importante para sistemas embarcados que
 	precisam lidar com o acesso à registradores. Esse modificador indica ao compilador que o valor da variável em questão
 	deve ser recarregado toda vez que ela for solicitada. Isso faz sentido em sistemas embarcados pois geralmente os valo-
 	res de variáveis são provenientes de registradores que podem ter seu valor alterado de forma não explícita por fatores
