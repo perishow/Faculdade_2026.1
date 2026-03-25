@@ -1,0 +1,46 @@
+Numero de linhas usadas para o auto_arima: 801
+Performing stepwise search to minimize aic
+ ARIMA(2,0,2)(1,0,1)[24] intercept   : AIC=inf, Time=6.96 sec
+ ARIMA(0,0,0)(0,0,0)[24] intercept   : AIC=13453.125, Time=0.03 sec
+ ARIMA(1,0,0)(1,0,0)[24] intercept   : AIC=12160.687, Time=3.28 sec
+ ARIMA(0,0,1)(0,0,1)[24] intercept   : AIC=12595.850, Time=1.78 sec
+ ARIMA(0,0,0)(0,0,0)[24]             : AIC=13788.749, Time=0.02 sec
+ ARIMA(1,0,0)(0,0,0)[24] intercept   : AIC=12274.468, Time=0.08 sec
+ ARIMA(1,0,0)(2,0,0)[24] intercept   : AIC=12095.170, Time=19.24 sec
+ ARIMA(1,0,0)(2,0,1)[24] intercept   : AIC=inf, Time=24.24 sec
+ ARIMA(1,0,0)(1,0,1)[24] intercept   : AIC=inf, Time=5.52 sec
+ ARIMA(0,0,0)(2,0,0)[24] intercept   : AIC=inf, Time=24.42 sec
+ ARIMA(2,0,0)(2,0,0)[24] intercept   : AIC=12096.899, Time=40.09 sec
+ ARIMA(1,0,1)(2,0,0)[24] intercept   : AIC=12097.692, Time=18.86 sec
+ ARIMA(0,0,1)(2,0,0)[24] intercept   : AIC=12224.121, Time=24.12 sec
+ ARIMA(2,0,1)(2,0,0)[24] intercept   : AIC=12097.082, Time=31.15 sec
+ ARIMA(1,0,0)(2,0,0)[24]             : AIC=inf, Time=3.63 sec
+
+Best model:  ARIMA(1,0,0)(2,0,0)[24] intercept
+Total fit time: 203.495 seconds
+                                     SARIMAX Results                                      
+==========================================================================================
+Dep. Variable:                                  y   No. Observations:                  801
+Model:             SARIMAX(1, 0, 0)x(2, 0, 0, 24)   Log Likelihood               -6042.585
+Date:                            Fri, 20 Mar 2026   AIC                          12095.170
+Time:                                    21:37:56   BIC                          12118.599
+Sample:                                         0   HQIC                         12104.170
+                                            - 801                                         
+Covariance Type:                              opg                                         
+==============================================================================
+                 coef    std err          z      P>|z|      [0.025      0.975]
+------------------------------------------------------------------------------
+intercept     89.4202     29.016      3.082      0.002      32.549     146.291
+ar.L1          0.6857      0.021     31.992      0.000       0.644       0.728
+ar.S.L24       0.3482      0.021     16.331      0.000       0.306       0.390
+ar.S.L48       0.2999      0.024     12.318      0.000       0.252       0.348
+sigma2      2.056e+05   6659.667     30.870      0.000    1.93e+05    2.19e+05
+===================================================================================
+Ljung-Box (L1) (Q):                   0.02   Jarque-Bera (JB):              1493.62
+Prob(Q):                              0.90   Prob(JB):                         0.00
+Heteroskedasticity (H):               1.28   Skew:                             0.36
+Prob(H) (two-sided):                  0.04   Kurtosis:                         9.65
+===================================================================================
+
+Warnings:
+[1] Covariance matrix calculated using the outer product of gradients (complex-step).

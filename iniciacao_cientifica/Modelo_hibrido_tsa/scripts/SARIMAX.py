@@ -1,116 +1,94 @@
 import pandas as pd
-import statsmodels.api as sm
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 import matplotlib.pyplot as plt
 import time
 import warnings
-from sklearn.metrics import mean_squared_error
 
-# Ignora os avisos chatos do statsmodels
+# Ignora os avisos chatos do statsmodels que poluem o terminal durante o loop
 warnings.filterwarnings("ignore")
 
 # 1. Carrega os dados
-file_path = "../datasets_tratados/sales.csv"
-data = pd.read_csv(file_path)
+file_path = "../datasets/2025/INMET_CO_DF_A001_BRASILIA_01-01-2025_A_30-11-2025.CSV"
+dataset = pd.read_csv(file_path, encoding="latin1", sep=";", skiprows=8, decimal=",")
+dataset = dataset.fillna({"RADIACAO GLOBAL (Kj/m²)": 0.0})
 
-# Garante que estamos pegando apenas os 100 primeiros itens
-serie_completa = data["Units Sold"].values[:100]
+# --- CORREÇÃO 1: Extrair a série completa em formato de array ---
+serie_completa = dataset["RADIACAO GLOBAL (Kj/m²)"].values
 
-tamanho_janela = 50
+tamanho_janela = int(len(serie_completa) * 0.6)
+previsoes = []
+valores_reais = []
 
-print("Iniciando o treinamento online do ARIMA com Grid Search...")
+# --- CORREÇÃO 2: Limite de passos para não travar seu PC por dias ---
+passos_para_prever = int(len(serie_completa) * 0.4)
+
+fim_loop = tamanho_janela + passos_para_prever
+
+print(f"Tamanho da janela de treino: {tamanho_janela} horas.")
+print(
+    f"Iniciando previsão passo a passo para as próximas {passos_para_prever} horas..."
+)
 inicio = time.perf_counter()
 
-# Configurações iniciais do Grid Search
-best_order = None
-best_mse = float("inf")  # Começa com infinito
-best_previsoes = None
+# 2. O Loop da Janela Deslizante
+for i in range(tamanho_janela, fim_loop):
+    # Fatiamos a série (ex: [0:tamanho_janela], depois [1:tamanho_janela+1], etc.)
+    janela_treino = serie_completa[i - tamanho_janela : i]
 
-# Os valores reais são os mesmos para todos os testes, extraímos apenas uma vez
-valores_reais = serie_completa[tamanho_janela:]
+    # --- CORREÇÃO 3: Parâmetros do seu auto_arima ---
+    modelo = SARIMAX(janela_treino, order=(1, 0, 0), seasonal_order=(2, 0, 0, 24))
 
-# Usamos 'p' e 'q' para os parâmetros do ARIMA para evitar conflito
-for p in range(4):
-    for d in range(2):
-        for q in range(4):
-            # Limpamos as previsões a cada nova combinação do Grid Search
-            previsoes_atuais = []
+    # disp=False impede que o SARIMAX imprima relatórios gigantescos a cada passo
+    modelo_ajustado = modelo.fit(disp=False)  # type: ignore
 
-            print(f"Testando ordem ARIMA({p}, {d}, {q})...")
+    # Faz a previsão de 1 passo à frente e pega o valor numérico exato
+    previsao_1_passo = modelo_ajustado.forecast(steps=1)[0]  # type: ignore
 
-            try:
-                # 2. O Loop da Janela Deslizante (usamos 't' para o tempo)
-                for t in range(tamanho_janela, len(serie_completa)):
-                    janela_treino = serie_completa[t - tamanho_janela : t]
+    previsoes.append(previsao_1_passo)
+    valores_reais.append(serie_completa[i])
 
-                    # Aplica o p e q dinâmicos do Grid Search
-                    modelo = sm.tsa.ARIMA(
-                        janela_treino,
-                        order=(p, d, q),
-                    )
-                    modelo_ajustado = modelo.fit()
-
-                    # Previsão de 1 passo
-                    previsao_1_passo = modelo_ajustado.forecast(steps=1)[0]
-                    previsoes_atuais.append(previsao_1_passo)
-
-                # Calcula o MSE APENAS quando a janela deslizante da ordem atual termina
-                mse_atual = mean_squared_error(valores_reais, previsoes_atuais)
-                print(f"   -> Concluído! MSE = {mse_atual:.4f}")
-
-                # Verifica se é o melhor modelo até agora
-                if mse_atual < best_mse:
-                    best_mse = mse_atual
-                    best_order = (p, d, q)
-                    best_previsoes = previsoes_atuais
-
-            except Exception as e:
-                # O statsmodels pode falhar ao ajustar certas ordens se os dados não ajudarem
-                print(
-                    f"   -> Erro ao ajustar ARIMA({p}, 1, {q}): ignorando esta combinação."
-                )
+    print(
+        f"Passo {i}: Previsto = {previsao_1_passo:.2f} | Real = {serie_completa[i]:.2f}"
+    )
 
 fim = time.perf_counter()
 
-# --- RESULTADOS FINAIS ---
-print("\n" + "=" * 45)
-print(f"Tempo total do Grid Search: {fim - inicio:.2f} segundos.")
-print(f"🏆 MELHOR ORDEM ENCONTRADA: ARIMA{best_order}")
-print(f"📉 MELHOR MSE: {best_mse:.4f}")
-print("=" * 45 + "\n")
+# 3. Visualizando e Salvando os Resultados
+print(f"\nO loop rodou {len(previsoes)} vezes e levou {fim - inicio:.4f} segundos.")
 
-# 3. Exportando o melhor modelo para CSV
-eixo_x = range(tamanho_janela, len(serie_completa))
+# Cálculo dos resíduos (Erro = Real - Previsto)
+residuos = [real - pred for real, pred in zip(valores_reais, previsoes)]
 
 df_resultados = pd.DataFrame(
     {
-        "Indice_Tempo": eixo_x,
+        "Indice_Tempo": range(tamanho_janela, fim_loop),
         "Valor_real": valores_reais,
-        "Previsao_ARIMA": best_previsoes,
+        "Previsao_SARIMAX": previsoes,
+        "Residuo": residuos,  # Nova coluna adicionada aqui
     }
 )
-df_resultados.to_csv("resultados_previsoes.csv", index=False)
-print("Resultados do melhor modelo salvos em 'resultados_previsoes.csv' com sucesso!")
+
+output_path = "./previsoes/previsoes_SARIMA_2.csv"
+df_resultados.to_csv(output_path, index=False)
+print("Resultados salvos em CSV com sucesso (incluindo coluna de resíduos)!")
 
 
-# 4. Visualizando o resultado do MELHOR modelo Online
-plt.figure(figsize=(10, 5))
+# Visualização
+plt.figure(figsize=(12, 6))
+eixo_x = range(tamanho_janela, fim_loop)
 
 plt.plot(
     eixo_x, valores_reais, label="Valores Reais", color="blue", marker="o", markersize=4
 )
-# Plota apenas as melhores previsões, indicando a ordem na legenda
 plt.plot(
-    eixo_x,
-    best_previsoes,
-    label=f"Melhor Previsão ARIMA {best_order}",
-    color="red",
-    linestyle="--",
+    eixo_x, previsoes, label="Previsões SARIMAX (1 passo)", color="red", linestyle="--"
 )
 
-plt.title(
-    f"Validação Walk-Forward: Melhor Modelo ARIMA {best_order} (MSE: {best_mse:.2f})"
-)
-plt.xlabel("Índice do Tempo")
-plt.ylabel("Unidades Vendidas")
+# --- CORREÇÃO 4: Nomes dos eixos ---
+plt.title("Validação Walk-Forward: Modelo SARIMAX Online - Radiação Solar")
+plt.xlabel("Índice do Tempo (Horas)")
+plt.ylabel("Radiação Global (Kj/m²)")
 plt.legend()
+plt.grid(True, linestyle=":", alpha=0.7)
+plt.tight_layout()
 plt.show()
