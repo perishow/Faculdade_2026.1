@@ -1,5 +1,6 @@
 import pandas as pd
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+import numpy as np
 import matplotlib.pyplot as plt
 import time
 import warnings
@@ -24,25 +25,55 @@ passos_para_prever = int(len(serie_completa) * 0.4)
 
 fim_loop = tamanho_janela + passos_para_prever
 
+# ... (código anterior)
+
 print(f"Tamanho da janela de treino: {tamanho_janela} horas.")
 print(
     f"Iniciando previsão passo a passo para as próximas {passos_para_prever} horas..."
 )
 inicio = time.perf_counter()
 
+# Variável para guardar os parâmetros da iteração anterior (Warm Start)
+parametros_iniciais = None
+
 # 2. O Loop da Janela Deslizante
 for i in range(tamanho_janela, fim_loop):
-    # Fatiamos a série (ex: [0:tamanho_janela], depois [1:tamanho_janela+1], etc.)
     janela_treino = serie_completa[i - tamanho_janela : i]
 
-    # --- CORREÇÃO 3: Parâmetros do seu auto_arima ---
-    modelo = SARIMAX(janela_treino, order=(1, 0, 0), seasonal_order=(2, 0, 0, 24))
+    # --- CORREÇÃO: Desativar enforce_stationarity e enforce_invertibility ---
+    modelo = SARIMAX(
+        janela_treino,
+        order=(1, 0, 0),
+        seasonal_order=(2, 0, 0, 24),
+        enforce_stationarity=False,
+        enforce_invertibility=False,
+    )
 
-    # disp=False impede que o SARIMAX imprima relatórios gigantescos a cada passo
-    modelo_ajustado = modelo.fit(disp=False)  # type: ignore
+    try:
+        # --- CORREÇÃO: Usar Warm Start ---
+        if parametros_iniciais is not None:
+            modelo_ajustado = modelo.fit(start_params=parametros_iniciais, disp=False)
+        else:
+            modelo_ajustado = modelo.fit(disp=False)
 
-    # Faz a previsão de 1 passo à frente e pega o valor numérico exato
-    previsao_1_passo = modelo_ajustado.forecast(steps=1)[0]  # type: ignore
+        # Salva os parâmetros para ajudar na previsão da PRÓXIMA janela
+        parametros_iniciais = modelo_ajustado.params  # type: ignore
+
+        # Faz a previsão
+        previsao_1_passo = modelo_ajustado.forecast(steps=1)[0]  # type: ignore
+
+        # Opcional: Evitar previsões negativas de radiação solar
+        previsao_1_passo = max(0.0, previsao_1_passo)
+
+    except np.linalg.LinAlgError:
+        # --- CORREÇÃO: Cinto de segurança para erros de matriz ---
+        print(
+            f"\n[!] Erro de decomposição LU no passo {i}. Usando previsão ingênua (0.0)."
+        )
+        previsao_1_passo = (
+            0.0  # Como deu erro geralmente na madrugada (vide seu log), 0 é seguro.
+        )
+        parametros_iniciais = None  # Reseta os parâmetros para a próxima rodada
 
     previsoes.append(previsao_1_passo)
     valores_reais.append(serie_completa[i])
@@ -52,6 +83,8 @@ for i in range(tamanho_janela, fim_loop):
     )
 
 fim = time.perf_counter()
+
+# ... (resto do código continua igual)
 
 # 3. Visualizando e Salvando os Resultados
 print(f"\nO loop rodou {len(previsoes)} vezes e levou {fim - inicio:.4f} segundos.")
@@ -68,7 +101,7 @@ df_resultados = pd.DataFrame(
     }
 )
 
-output_path = "./previsoes/previsoes_SARIMA_2.csv"
+output_path = "./previsoes/previsoes_SARIMA_3.csv"
 df_resultados.to_csv(output_path, index=False)
 print("Resultados salvos em CSV com sucesso (incluindo coluna de resíduos)!")
 
