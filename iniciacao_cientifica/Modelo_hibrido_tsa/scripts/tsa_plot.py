@@ -40,52 +40,101 @@ def plotar_radiacao(df):
     plt.show()
 
 
-def plotar_comparacao(df_real, df_previsto):
-    # Prepara a figura
-    _, ax = plt.subplots(figsize=(14, 6))
+def plotar_comparacao_series(
+    y_real: pd.Series,
+    y_previsto: pd.Series,
+    titulo="Comparação: Valor Real vs Previsões",
+    save_path=None,
+    show=True,
+):
+    """
+    Recebe duas pd.Series (valor real e previsões) e plota um gráfico de linha comparativo.
 
-    # 1. Plota o PRIMEIRO dataset (Dados Reais)
-    ax.plot(
-        df_real.index,
-        df_real["RADIACAO GLOBAL (Kj/m²)"],
-        color="darkorange",
-        label="Dados Reais",
+    Parâmetros:
+    - y_real (pd.Series): A série temporal com os valores reais.
+    - y_previsto (pd.Series): A série temporal com os valores preditos pelo modelo.
+    - titulo (str): O título que aparecerá no topo do gráfico.
+    """
+
+    # Define o tamanho da figura (largura, altura)
+    plt.figure(figsize=(12, 6))
+
+    # Plota os valores reais (linha contínua azul)
+    plt.plot(
+        y_real.index,  # type: ignore
+        y_real.values,  # type: ignore
+        label="Valor Real",
+        color="#1f77b4",
         linewidth=2,
     )
 
-    # 2. Plota o SEGUNDO dataset (Previsões) na mesma tela
-    # Dica: Usar uma linha tracejada ('--') e um pouco de transparência (alpha)
-    # ajuda muito a ver os dados reais que estão por trás da previsão.
-    ax.plot(
-        df_previsto.index,
-        df_previsto["Previsao"],
-        color="blue",
-        label="Previsão SARIMA",
-        linewidth=2,
+    # Plota as previsões (linha tracejada laranja/vermelha)
+    plt.plot(
+        y_previsto.index,
+        y_previsto.values,  # type: ignore
+        label="Previsão",
+        color="#ff7f0e",
         linestyle="--",
-        alpha=0.8,
+        linewidth=2,
     )
 
-    # Textos e Formatação
-    ax.set_title(
-        "Comparação: Radiação Real vs Previsão SARIMA", fontsize=15, fontweight="bold"
-    )
-    ax.set_xlabel("Data", fontsize=12)
-    ax.set_ylabel("Radiação (Kj/m²)", fontsize=12)
-    ax.grid(True, linestyle="--", alpha=0.6)
+    # Adiciona rótulos e título
+    plt.title(titulo, fontsize=16, pad=15)
+    plt.xlabel("Tempo", fontsize=12)
+    plt.ylabel("Valores", fontsize=12)
 
-    # 3. Chama a legenda (isso usa os 'labels' definidos lá no .plot)
-    # É fundamental quando sobrepomos dados para sabermos quem é quem!
-    ax.legend(loc="upper right")
+    # Configura a legenda e a grade (grid)
+    plt.legend(loc="best", fontsize=12)
+    plt.grid(True, linestyle=":", alpha=0.7)
 
-    plt.xticks(rotation=45)
+    # Rotaciona as datas no eixo X para evitar sobreposição (se o index for datetime)
+    plt.gcf().autofmt_xdate()
+
+    # Ajusta o layout para não cortar nenhuma informação
     plt.tight_layout()
-    plt.show()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        print(f"Gráfico salvo com sucesso em: {save_path}")
+    if show:
+        # Exibe o gráfico
+        plt.show()
 
 
-file_path = "./resultados_previsoes.csv"
-file2_path = "./resultados_previsoes_1.csv"
+def plotar_comparacao_series_sequencial(inicio, fim, fatia, save_path_base):
+    contador = 0
+    for i in range(inicio, fim, fatia):
+        contador += 1
+        inicio = i
+        fim = inicio + fatia
+        print(f"{inicio} --> {fim}")
+
+        valores_reais = dataset["Valor_real"].iloc[inicio:fim]
+        previsoes = dataset["Previsao_SARIMAX"].iloc[inicio:fim]
+
+        save_path = f"{save_path_base}/plotagem_comparativa_SARIMA_{contador}"
+        try:
+            plotar_comparacao_series(
+                y_real=valores_reais,
+                y_previsto=previsoes,
+                save_path=save_path,
+                show=False,
+            )
+        except Exception as e:
+            print(f"{contador} - Erro de plotagem")
+            print(e)
+
+
+file_path = "./previsoes/previsoes_SARIMA_3.csv"
+save_path = "./plotagens/plotagem_comparativa_SARIMA"
 dataset = pd.read_csv(file_path)
-dataset2 = pd.read_csv(file2_path)
 
-plotar_comparacao(dataset, dataset2)
+inicio = 0
+fim = 3000
+fatia = 300
+
+print(len(dataset))
+
+plotar_comparacao_series_sequencial(
+    inicio=inicio, fim=fim, fatia=fatia, save_path_base=save_path
+)

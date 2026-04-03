@@ -1,0 +1,9 @@
+As plotagens nesse diretório correspondem aos 40% finais do dataset:
+../../../datasets/2025/INMET_CO_DF_A001_BRASILIA_01-01-2025_A_30-11-2025.CSV
+
+Os horários específicos podem ser checados utilizando o scrip "relacao_indice_horario.py"
+que retorna a seguinte relação:
+
+Previsão Inicia em: Índice 4809 -> 2025/07/20 às 0900 UTC
+Previsão Termina em: Índice 8014 -> 2025/11/30 às 2200 UTC
+

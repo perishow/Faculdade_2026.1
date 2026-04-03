@@ -1,98 +1,126 @@
 import pandas as pd
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 import numpy as np
-from tensorflow.keras import layers, Sequential
-from scikeras.wrappers import KerasRegressor
-from sklearn.model_selection import GridSearchCV
-from sklearn.preprocessing import StandardScaler  # <-- Importação do StandardScaler
+import matplotlib.pyplot as plt
+import time
+import warnings
 
-# 0. Importação dos dados
+# Ignora os avisos chatos do statsmodels que poluem o terminal durante o loop
+warnings.filterwarnings("ignore")
+
+# 1. Carrega os dados
 file_path = "../datasets/2025/INMET_CO_DF_A001_BRASILIA_01-01-2025_A_30-11-2025.CSV"
-file_path_residuo = "./previsoes/previsoes_SARIMA_2.csv"
-
 dataset = pd.read_csv(file_path, encoding="latin1", sep=";", skiprows=8, decimal=",")
-dataset_residuo = pd.read_csv(file_path_residuo)
+dataset = dataset.fillna({"RADIACAO GLOBAL (Kj/m²)": 0.0})
 
-# Alinhamento dos resíduos com o dataset
-tamanho_inicio = int(len(dataset) * 0.6)
-tamanho_fim = tamanho_inicio + len(dataset_residuo)
-dataset = dataset.iloc[tamanho_inicio:tamanho_fim]
+# --- CORREÇÃO 1: Extrair a série completa em formato de array ---
+serie_completa = dataset["RADIACAO GLOBAL (Kj/m²)"].values
 
-dataset = dataset.reset_index(drop=True)
-dataset_residuo = dataset_residuo.reset_index(drop=True)
+tamanho_janela = int(len(serie_completa) * 0.6)
+previsoes = []
+valores_reais = []
 
-# Seleção das features relevantes e tratamento de nulos
-features = [
-    "PRECIPITAÇÃO TOTAL, HORÁRIO (mm)",
-    "TEMPERATURA DO AR - BULBO SECO, HORÁRIA (°C)",
-    "VENTO, VELOCIDADE HORARIA (m/s)",
-]
+# --- CORREÇÃO 2: Limite de passos para não travar seu PC por dias ---
+passos_para_prever = int(len(serie_completa) * 0.4)
 
-# Preenchemos eventuais valores nulos (NaN) para não quebrar a rede neural
-dataset = dataset[features].ffill().bfill()
+fim_loop = tamanho_janela + passos_para_prever
 
-# Extraímos apenas os valores numéricos (arrays) e a coluna alvo específica
-X = dataset.values
-y = dataset_residuo["Residuo"].values
+# ... (código anterior)
 
-# Divisão Treino/Teste ANTES da normalização
-marca_treino = int(len(X) * 0.8)
+print(f"Tamanho da janela de treino: {tamanho_janela} horas.")
+print(
+    f"Iniciando previsão passo a passo para as próximas {passos_para_prever} horas..."
+)
+inicio = time.perf_counter()
 
-x_treino_bruto = X[:marca_treino]
-y_treino_bruto = y[:marca_treino]
+# Variável para guardar os parâmetros da iteração anterior (Warm Start)
+parametros_iniciais = None
 
-x_teste_bruto = X[marca_treino:]
-y_teste_bruto = y[marca_treino:]
+# 2. O Loop da Janela Deslizante
+for i in range(tamanho_janela, fim_loop):
+    janela_treino = serie_completa[i - tamanho_janela : i]
 
-# --- NORMALIZAÇÃO COM STANDARDSCALER ---
-scaler_x = StandardScaler()
-scaler_y = StandardScaler()
-
-# O fit_transform aprende os padrões do treino e já aplica a normalização
-x_treino = scaler_x.fit_transform(x_treino_bruto)
-# O transform APENAS aplica a normalização no teste (usando as métricas do treino)
-x_teste = scaler_x.transform(x_teste_bruto)
-
-# O StandardScaler exige que o array tenha formato 2D, por isso o reshape(-1, 1).
-# Depois usamos flatten() para voltar ao formato 1D exigido pelo Keras
-y_treino = scaler_y.fit_transform(y_treino_bruto.reshape(-1, 1)).flatten()
-y_teste = scaler_y.transform(y_teste_bruto.reshape(-1, 1)).flatten()
-# ---------------------------------------
-
-
-# 1. Função que cria o modelo (necessária para o wrapper)
-def criar_modelo(hidden_neurons=4):
-    model = Sequential(
-        [
-            # input_shape=(3,) pois você tem 3 neurônios de entrada
-            layers.Dense(hidden_neurons, activation="relu", input_shape=(3,)),
-            layers.Dense(1),  # Saída para regressão
-        ]
+    modelo = SARIMAX(
+        janela_treino,
+        order=(1, 0, 0),
+        seasonal_order=(2, 0, 0, 24),
+        enforce_stationarity=False,
+        enforce_invertibility=False,
     )
-    model.compile(optimizer="adam", loss="mse")
-    return model
 
+    try:
+        # --- CORREÇÃO: Usar Warm Start ---
+        if parametros_iniciais is not None:
+            modelo_ajustado = modelo.fit(start_params=parametros_iniciais, disp=False)
+        else:
+            modelo_ajustado = modelo.fit(disp=False)
 
-# 2. Criar o wrapper do Keras para o Scikit-Learn
-# Passamos fixo epochs=20 como você pediu
-model_wrapper = KerasRegressor(model=criar_modelo, epochs=20, verbose=0)
+        # Salva os parâmetros para ajudar na previsão da PRÓXIMA janela
+        parametros_iniciais = modelo_ajustado.params  # type: ignore
 
-# 3. Definir o dicionário de busca (Grid)
-# Vamos testar, por exemplo: 2, 4, 8, 16 e 32 neurônios
-param_grid = {"model__hidden_neurons": [2, 4, 8, 16, 32]}
+        # Faz a previsão
+        previsao_1_passo = modelo_ajustado.forecast(steps=1)[0]  # type: ignore
 
-# 4. Configurar o GridSearchCV
-# cv=3 faz uma validação cruzada de 3 dobras
-grid = GridSearchCV(
-    estimator=model_wrapper,
-    param_grid=param_grid,
-    cv=3,
-    scoring="neg_mean_squared_error",
+        # Opcional: Evitar previsões negativas de radiação solar
+        previsao_1_passo = max(0.0, previsao_1_passo)
+
+    except np.linalg.LinAlgError:
+        # --- CORREÇÃO: Cinto de segurança para erros de matriz ---
+        print(
+            f"\n[!] Erro de decomposição LU no passo {i}. Usando previsão ingênua (0.0)."
+        )
+        previsao_1_passo = (
+            0.0  # Como deu erro geralmente na madrugada (vide seu log), 0 é seguro.
+        )
+        parametros_iniciais = None  # Reseta os parâmetros para a próxima rodada
+
+    previsoes.append(previsao_1_passo)
+    valores_reais.append(serie_completa[i])
+
+    print(
+        f"Passo {i}: Previsto = {previsao_1_passo:.2f} | Real = {serie_completa[i]:.2f}"
+    )
+
+fim = time.perf_counter()
+
+# ... (resto do código continua igual)
+
+# 3. Visualizando e Salvando os Resultados
+print(f"\nO loop rodou {len(previsoes)} vezes e levou {fim - inicio:.4f} segundos.")
+
+# Cálculo dos resíduos (Erro = Real - Previsto)
+residuos = [real - pred for real, pred in zip(valores_reais, previsoes)]
+
+df_resultados = pd.DataFrame(
+    {
+        "Indice_Tempo": range(tamanho_janela, fim_loop),
+        "Valor_real": valores_reais,
+        "Previsao_SARIMAX": previsoes,
+        "Residuo": residuos,  # Nova coluna adicionada aqui
+    }
 )
 
-# 5. Executar a busca (Agora usando os dados normalizados)
-print("Iniciando Grid Search...")
-grid_result = grid.fit(x_treino, y_treino)
+output_path = "./previsoes/previsoes_SARIMA_3.csv"
+df_resultados.to_csv(output_path, index=False)
+print("Resultados salvos em CSV com sucesso (incluindo coluna de resíduos)!")
 
-# 6. Exibir os melhores resultados
-print(f"Melhor configuração: {grid_result.best_params_}")
-print(f"Melhor MSE (em escala normalizada): {abs(grid_result.best_score_):.4f}")
+
+# Visualização
+plt.figure(figsize=(12, 6))
+eixo_x = range(tamanho_janela, fim_loop)
+
+plt.plot(
+    eixo_x, valores_reais, label="Valores Reais", color="blue", marker="o", markersize=4
+)
+plt.plot(
+    eixo_x, previsoes, label="Previsões SARIMAX (1 passo)", color="red", linestyle="--"
+)
+
+# --- CORREÇÃO 4: Nomes dos eixos ---
+plt.title("Validação Walk-Forward: Modelo SARIMAX Online - Radiação Solar")
+plt.xlabel("Índice do Tempo (Horas)")
+plt.ylabel("Radiação Global (Kj/m²)")
+plt.legend()
+plt.grid(True, linestyle=":", alpha=0.7)
+plt.tight_layout()
+plt.show()
