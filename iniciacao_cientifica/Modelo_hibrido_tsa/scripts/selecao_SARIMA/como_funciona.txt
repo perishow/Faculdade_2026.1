@@ -1,0 +1,24 @@
+Para determinar os parâmetros do modelo SARIMA foi utilizada a função "pmdarima.auto_arima".
+
+Essa função realiza os seguintes testes estatísticos para determinar os parâmetros adequados:
+
+Parâmetros não sazonais (p,d,q):
+
+d: A função realiza o teste KPSS (Kwiatkowski–Phillips–Schmidt–Shin) para determinar se a série é estacionária. No nosso caso, a série já era estacionária então d = 0.
+
+p e q: O algoritmo realiza um teste iterativo, ajustando os parâmetros p e q e avaliando o desempenho dos modelos usando o critério da informação AIC ( Akaike Information Criterion ).
+
+Parâmetros sazonais (P, D, Q, m):
+
+m: Se refere ao período sazonal e deve ser informado pelo usuário. No nosso caso, como se trata de dados horários, m = 24.
+
+D: A função realiza o teste de estacionaridade sazonal OCSB. Como nossa série é sazonalmente estacionária, D = 0.
+
+P e Q: O algoritmo realiza o mesmo teste iterativo, ajustando os parâmetros P e Q e avaliando o desempenho usando o critério da informação AIC.
+
+============================================================================================================================================
+Um ponto importante é que o algoritmo tem 2 modos de funcionamento: stepwise e parallel.
+
+O stepwise é baseado no algoritmo Hyndman e Khaldakar (2008), não testa todas as combinações possíveis e tende a ser mais rápido. Ele começa com quatro modelos básicos, escolhe o melhor e vai alterando os valores de p, q, P e Q em +- 1. Ele segue assim até não conseguir mais melhorar o modelo. Chega à melhor solução local.
+
+O parallel realiza um grid search exaurindo todas as combinações possíveis de hiper parâmetros em paralelo. É consideravelmente mais lento e nem sempre resulta em um modelo melhor que o setpwise.
