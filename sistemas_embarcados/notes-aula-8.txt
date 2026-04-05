@@ -1,0 +1,65 @@
+Comunicação Serial UART ( Universal Asynchronous Receiver Transmitter ).
+
+UART é a interface de comunicação assíncrona.
+USART é a interface de comunicação síncrona.
+
+Esse sincronismo é referente ao clock.
+
+Dizer que a comunicação é serial quer dizer que os bits de informação não são transmitidos de uma vez, demandando que um bit seja enviado após o outro, em série.
+
+Baud Rate se refere à velocidade com que cada simbolo é enviado. Como geralmente cada símbolo é um bit, pode ser entendido também como "bitrate".
+
+Vantagens da comunicação serial:
+    - Hardware mais simples de ser implementado.
+    - Aumento da taxa de transmissão devido a redução de problemas de sincronismo.
+    - Economia de cabos e espaço.
+
+obs: Inicialmente, por definição, uma comunicação serial teria uma menor taxa de transmissão em comparação com a comunicação em paralelo. Isso não se mostra verdadeiro graças à velocidade com a qual os sistemas computacionais passaram a funcionar e problemas de sincronismo na comunicação paralela passaram a limitar a taxa de transferência em paralelo. Problema esse que não ocorre na comunicação serial.
+
+Desvantagens da comunicação serial:
+    - Necessidade de circuitos extras. (comunicação entre UART e USB)
+    - Maior complexidade na manipulação dos dados. (Conversão serial <-> paralelo)
+
+obs: As desvantagens da comunicação serial foram praticamente anuladas pela tecnologia atual, tornando-a uma opção muito superior encima da comunicação paralela.
+
+Conversão USB para UART na STM32:
+    - Quando a placa NUCLEO é conectada ao PC via USB, o módulo ST-LINK cria uma porta COM virtual (VCP) no computador. 
+    - O microcontrolador na placa NUCLEO, por sua vez, se comunica com o ST-LINK usando uma interface UART interna.
+    - O ST-LINK recebe os dados UART do microcontrolador e os converte para o formato USB.
+
+UART ( Universal Asynchronous Receiver/Transmitter ):
+    - é um componente lógico que implementa a comunicação serial assíncrona entre dois dispositivos ou entre duas partes internas de um dispositivo.
+    - Converte dados paralelos em dados seriais e faz operação inversa na recepção.
+    - Controla como os dados são formatados, transmitidos e recebidos, mas não especifica as características elétricas dos sinais.
+    - Usado internamente em microcontroladores, computadores e dispositivos embarcados.
+
+RS232 ( Recommended Standard 232 ):
+    - É uma norma de comunicação serial que define as características físicas, elétricas e de temporização para comunicação serial entre dispositivos.
+    - Especifica como os sinais elétricos devem ser enviados, incluindo níveis de tensão, duração dos bits, e conectores físicos.
+    - Popular em aplicações de longa distância ou conexão de dispositivos a PCs (ex: portas COM)
+
+Escopo UART vs RS232:
+    - UART: Camada lógica da comunicação serial, lidando com o envio e recebimento de dados seriais, bits de start/stop, paridade e etc. Mas não especifica os níveis de tensão ou conectores.
+    - RS 232: Camada física e define como os sinais devem ser fisicamente transmitidos e recebidos (tensão, temporização, pinos), além de incluir o formato dos conectores.
+
+Sinalização e Protocolos:
+    - UART: Apenas transmite os dados entre dispositivos. A responsabilidade pelo protocolo de comunicação fica por conta do software.
+    - RS 232: Inclui sinais adicionais para controle de fluxo, como RTS (Request to send) e CTS (Clear do send), e, portanto, pode oferecer mais robustez em cenários onde o gerenciamento de dados e controle de fluxo são importantes.
+
+Níveis de tensão:
+    - UART: Opera tipicamente com níveis de tensão CMOS ou TTL: 
+          - Lógico 1: 3.3V ou 5V.
+          - Lógico 0: 0V.
+    
+    - RS232: Utiliza níveis de tensão mais elevados e inversos. Esses níveis são projetados para tornar a comunicação mais robusta a interferências e permitem comunicação em maiores distâncias.
+          - Lógico 1: Entre -3V e -15V.
+          - Lógico 0: Entre +3V e +15V.
+
+O padrão RS232 (base do UART):
+    - Um bit de marcação de início de mensagem -start bit
+    - Os 8 bits de dados (Primeiro o menos significativo)
+    - Um bit de paridade (Opcional)
+    - Um bit de marcação de fim de mensagem - stop bit.
+
+obs: Alguns padrões operam enviando de 5 à 9 bits por vez.
+

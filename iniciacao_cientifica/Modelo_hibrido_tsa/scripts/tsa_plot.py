@@ -2,49 +2,55 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def plotar_radiacao(df):
+def plotar_serie(
+    serie: pd.Series,
+    titulo="Meu Gráfico",
+    cor="#1f77b4",
+    tipo="line",
+    save_path: str | None = None,
+    show: bool = True,
+):
     """
-    Função para plotar a série temporal de Radiação Global.
-    O dataset precisa ter um índice temporal (DatetimeIndex).
+    Recebe uma Pandas Series e plota usando Matplotlib.
+
+    Parâmetros:
+    - serie: pd.Series
+    - titulo: str (Título do gráfico)
+    - cor: str (Cor da linha ou das barras)
+    - tipo: str ('line' para linha, 'bar' para barras)
     """
-    # Define o tamanho do gráfico (largura, altura)
-    plt.figure(figsize=(14, 6))
+    # Criando a figura e os eixos
+    plt.figure(figsize=(10, 6))
 
-    # Plota os dados. O Matplotlib é inteligente e já usa o índice como eixo X!
-    plt.plot(
-        df.index,
-        df["RADIACAO GLOBAL (Kj/m²)"],
-        color="darkorange",
-        linewidth=1.5,
-        label="Radiação Global",
-    )
+    # Plotando de acordo com o tipo escolhido
+    if tipo == "line":
+        plt.plot(serie.index, serie.values, linestyle="-", color=cor)  # type: ignore
+    elif tipo == "bar":
+        plt.bar(serie.index, serie.values, color=cor)  # type: ignore
 
-    # Adiciona título e nomes aos eixos
-    plt.title("Variação da Radiação Solar Global", fontsize=15, fontweight="bold")
-    plt.xlabel("Data e Hora", fontsize=12)
-    plt.ylabel("Radiação (Kj/m²)", fontsize=12)
+    # Customização
+    plt.title(titulo, fontsize=14, fontweight="bold")
+    plt.xlabel(serie.index.name if serie.index.name else "Índice")  # type:ignore
+    plt.ylabel("Valores")
+    plt.grid(True, linestyle="--", alpha=0.7)
+    plt.xticks(rotation=45)  # Rotaciona os nomes do eixo X se forem longos
 
-    # Adiciona uma grade de fundo para facilitar a leitura
-    plt.grid(True, linestyle="--", alpha=0.6)
-
-    # Adiciona a legenda
-    plt.legend()
-
-    # Rotaciona os textos das datas no eixo X para não se sobreporem
-    plt.xticks(rotation=45)
-
-    # Ajusta o layout para garantir que nada fique cortado na imagem final
+    # Ajusta o layout para não cortar informações
     plt.tight_layout()
 
-    # Mostra o gráfico na tela
-    plt.show()
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
+        print(f"Gráfico salvo com sucesso em: {save_path}")
+    if show:
+        # Exibe o gráfico
+        plt.show()
 
 
 def plotar_comparacao_series(
     y_real: pd.Series,
     y_previsto: pd.Series,
     titulo="Comparação: Valor Real vs Previsões",
-    save_path=None,
+    save_path: str | None = None,
     show=True,
 ):
     """
@@ -101,7 +107,7 @@ def plotar_comparacao_series(
         plt.show()
 
 
-def plotar_comparacao_series_sequencial(inicio, fim, fatia, save_path_base):
+def plotar_serie_sequencial(inicio, fim, fatia, save_path_base, formato: str = ".png"):
     contador = 0
     for i in range(inicio, fim, fatia):
         contador += 1
@@ -109,10 +115,30 @@ def plotar_comparacao_series_sequencial(inicio, fim, fatia, save_path_base):
         fim = inicio + fatia
         print(f"{inicio} --> {fim}")
 
-        valores_reais = dataset["Valor_real"].iloc[inicio:fim]
-        previsoes = dataset["Previsao_SARIMAX"].iloc[inicio:fim]
+        residuos = dataset["Residuo"].iloc[inicio:fim]
 
-        save_path = f"{save_path_base}/plotagem_comparativa_SARIMA_{contador}"
+        save_path = f"{save_path_base}/plotagem_residuo_{contador}{formato}"
+        try:
+            plotar_serie(residuos, titulo="Residuos", save_path=save_path, show=False)
+        except Exception as e:
+            print(f"{contador} - erro de plotagem")
+            print(e)
+
+
+def plotar_comparacao_series_sequencial(
+    inicio: int, fim: int, fatia: int, save_path_base: str
+):
+    contador = 0
+    for i in range(inicio, fim, fatia):
+        contador += 1
+        inicio = i
+        fim = inicio + fatia
+        print(f"{inicio} --> {fim}")
+
+        valores_reais = dataset["valor_real"].iloc[inicio:fim]
+        previsoes = dataset["previsao_sarimax"].iloc[inicio:fim]
+
+        save_path = f"{save_path_base}/plotagem_comparativa_sarima_{contador}.pdf"
         try:
             plotar_comparacao_series(
                 y_real=valores_reais,
@@ -121,20 +147,23 @@ def plotar_comparacao_series_sequencial(inicio, fim, fatia, save_path_base):
                 show=False,
             )
         except Exception as e:
-            print(f"{contador} - Erro de plotagem")
+            print(f"{contador} - erro de plotagem")
             print(e)
 
 
-file_path = "./previsoes/previsoes_SARIMA_3.csv"
-save_path = "./plotagens/plotagem_comparativa_SARIMA"
-dataset = pd.read_csv(file_path)
+if __name__ == "__main__":
+    file_path = "./previsoes/previsoes_SARIMA_3.csv"
+    save_path = "./plotagens/plotagem_residuo_SARIMA"
+    dataset = pd.read_csv(file_path)
 
-inicio = 0
-fim = 3000
-fatia = 300
+    inicio = 0
+    fim = 3000
+    fatia = 300
 
-print(len(dataset))
+    print(len(dataset))
 
-plotar_comparacao_series_sequencial(
-    inicio=inicio, fim=fim, fatia=fatia, save_path_base=save_path
-)
+    residuo = dataset["Residuo"]
+
+    plotar_serie_sequencial(
+        inicio=inicio, fim=fim, fatia=fatia, save_path_base=save_path
+    )
