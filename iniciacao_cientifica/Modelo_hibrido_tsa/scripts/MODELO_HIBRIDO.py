@@ -16,14 +16,14 @@ def gerar_pdf_relatorio(metricas, mse_base, mae_base, imagem_grafico, nome_arqui
     pdf.set_font("Arial", "B", 16)
     
     # Título
-    pdf.cell(0, 10, "Relatório de Desempenho: Modelos Híbridos vs SARIMAX", ln=True, align='C')
+    pdf.cell(0, 10, "Relatório de Desempenho: Modelos Híbridos vs SARIMA", ln=True, align='C')
     pdf.ln(10)
     
     # Resumo do Modelo Base
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "1. Desempenho do Modelo Base (Baseline)", ln=True)
     pdf.set_font("Arial", "", 11)
-    pdf.cell(0, 8, f"Modelo: SARIMAX Puro", ln=True)
+    pdf.cell(0, 8, f"Modelo: SARIMA Puro", ln=True)
     pdf.cell(0, 8, f"MSE: {mse_base:.4f}", ln=True)
     pdf.cell(0, 8, f"MAE: {mae_base:.4f}", ln=True)
     pdf.ln(5)
@@ -188,7 +188,7 @@ gerar_pdf_relatorio(
     mae_base=mae_base, 
     imagem_grafico='grafico_comparativo_modelos.png'
 )
-print(f"{'SARIMAX PURO (Base)':<25} | MSE: {mse_base:.2f} | MAE: {mae_base:.2f}")
+print(f"{'SARIMA PURO (Base)':<25} | MSE: {mse_base:.2f} | MAE: {mae_base:.2f}")
 print("-" * 60)
 
 for nome, mets in metricas_modelos.items():
@@ -205,7 +205,7 @@ def plotar_comparacao_total(real, sarimax, prevs_dict, amostras=150):
     
     # Linhas Base
     plt.plot(real[:amostras], label='Valor Real (Target)', color='black', linewidth=2, marker='.')
-    plt.plot(sarimax[:amostras], label='SARIMAX Puro', color='gray', linestyle=':', linewidth=2, alpha=0.8)
+    plt.plot(sarimax[:amostras], label='SARIMA Puro', color='gray', linestyle=':', linewidth=2, alpha=0.8)
     
     # Cores e Estilos
     estilos = [
