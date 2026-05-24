@@ -9,7 +9,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # 1. Carrega os dados
-file_path = "../datasets/2025/INMET_CO_DF_A001_BRASILIA_01-01-2025_A_30-11-2025.CSV"
+file_path = "../../datasets/2025/INMET_CO_DF_A001_BRASILIA_01-01-2025_A_30-11-2025.CSV"
 dataset = pd.read_csv(file_path, encoding="latin1", sep=";", skiprows=8, decimal=",")
 dataset = dataset.fillna({"RADIACAO GLOBAL (Kj/m²)": 0.0})
 
@@ -95,12 +95,12 @@ df_resultados = pd.DataFrame(
     {
         "Indice_Tempo": range(tamanho_janela, fim_loop),
         "Valor_real": valores_reais,
-        "Previsao_SARIMAX": previsoes,
+        "Previsao_SARIMA": previsoes,
         "Residuo": residuos,  # Nova coluna adicionada aqui
     }
 )
 
-output_path = "./previsoes/previsoes_SARIMA_3.csv"
+output_path = "../previsoes/previsoes_SARIMA_3.csv"
 df_resultados.to_csv(output_path, index=False)
 print("Resultados salvos em CSV com sucesso (incluindo coluna de resíduos)!")
 
@@ -113,11 +113,11 @@ plt.plot(
     eixo_x, valores_reais, label="Valores Reais", color="blue", marker="o", markersize=4
 )
 plt.plot(
-    eixo_x, previsoes, label="Previsões SARIMAX (1 passo)", color="red", linestyle="--"
+    eixo_x, previsoes, label="Previsões SARIMA (1 passo)", color="red", linestyle="--"
 )
 
 # --- CORREÇÃO 4: Nomes dos eixos ---
-plt.title("Validação Walk-Forward: Modelo SARIMAX Online - Radiação Solar")
+plt.title("Validação Walk-Forward: Modelo SARIMA Online - Radiação Solar")
 plt.xlabel("Índice do Tempo (Horas)")
 plt.ylabel("Radiação Global (Kj/m²)")
 plt.legend()

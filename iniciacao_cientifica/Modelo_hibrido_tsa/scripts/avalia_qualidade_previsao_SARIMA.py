@@ -2,7 +2,7 @@ from sklearn.metrics import mean_squared_error
 import pandas as pd
 import matplotlib.pyplot as plt
 
-file_path = "./previsoes/previsoes_SARIMA_1.csv"
+file_path = "./previsoes/previsoes_SARIMA_3.csv"
 dataset = pd.read_csv(file_path)
 
 mse = mean_squared_error(dataset["Valor_real"], dataset["Previsao_SARIMAX"])
@@ -23,7 +23,7 @@ def plotar_comparacao(teste, predictions):
     plt.plot(
         predictions.index,
         predictions,
-        label="Previsões (SARIMAX)",
+        label="Previsões (SARIMA)",
         color="orange",
         linestyle="--",
         marker="x",

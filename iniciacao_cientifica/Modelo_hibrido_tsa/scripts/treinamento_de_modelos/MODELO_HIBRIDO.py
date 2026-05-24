@@ -10,7 +10,7 @@ from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 
 from fpdf import FPDF
 
-def gerar_pdf_relatorio(metricas, mse_base, mae_base, imagem_grafico, nome_arquivo_pdf="Relatorio_Modelos_Hibridos.pdf"):
+def gerar_pdf_relatorio(metricas, mse_base, mae_base, imagem_grafico, nome_arquivo_pdf="../relatorios/Relatorio_Modelos_Hibridos.pdf"):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
@@ -65,14 +65,14 @@ def gerar_pdf_relatorio(metricas, mse_base, mae_base, imagem_grafico, nome_arqui
 # 1 - Import dos dados enriquecidos
 # ==========================================
 # Certifique-se de que o caminho aponta para o arquivo correto criado no passo anterior
-file_path = "previsoes/previsoes_enriquecidas_SARIMA.csv"
+file_path = "../previsoes/previsoes_enriquecidas_SARIMA.csv"
 dataframe = pd.read_csv(file_path)
 
 # Mapeamento das colunas (Verifique se os nomes batem com o seu CSV)
-# 0: Indice_Tempo, 1: Valor_real, 2: Previsao_SARIMAX, 3: Residuo
+# 0: Indice_Tempo, 1: Valor_real, 2: Previsao_SARIMA, 3: Residuo
 # 4: RADIACAO, 5: TEMP_AR, 6: TEMP_MAX, 7: TEMP_MIN
 COL_REAL = 1
-COL_SARIMAX = 2
+COL_SARIMA = 2
 COL_RESIDUO = 3
 # As colunas de 4 em diante são as nossas novas "Features Exógenas"
 
@@ -113,7 +113,7 @@ def criar_matrizes_hibridas_enriquecidas(dados_array, n_lags=24):
         
         X.append(input_total)
         y.append(dados_array[i, COL_RESIDUO])
-        sarimax_base.append(dados_array[i, COL_SARIMAX])
+        sarimax_base.append(dados_array[i, COL_SARIMA])
         real_base.append(dados_array[i, COL_REAL])
         
     return np.array(X), np.array(y), np.array(sarimax_base), np.array(real_base)
@@ -149,7 +149,7 @@ def reverter_escala_dinamica(valores, indice, scaler, dataframe):
     return scaler.inverse_transform(dummy)[:, indice]
 
 real_teste_orig = reverter_escala_dinamica(real_teste, COL_REAL, scaler, dataframe)
-sarimax_teste_orig = reverter_escala_dinamica(sarimax_teste, COL_SARIMAX, scaler, dataframe)
+sarimax_teste_orig = reverter_escala_dinamica(sarimax_teste, COL_SARIMA, scaler, dataframe)
 
 mse_base = mean_squared_error(real_teste_orig, sarimax_teste_orig)
 mae_base = mean_absolute_error(real_teste_orig, sarimax_teste_orig)
@@ -186,7 +186,7 @@ gerar_pdf_relatorio(
     metricas=metricas_modelos, 
     mse_base=mse_base, 
     mae_base=mae_base, 
-    imagem_grafico='grafico_comparativo_modelos.png'
+    imagem_grafico='../plotagens/plotagem_comparativa_hibrido/grafico_comparativo_modelos.png'
 )
 print(f"{'SARIMA PURO (Base)':<25} | MSE: {mse_base:.2f} | MAE: {mae_base:.2f}")
 print("-" * 60)
@@ -226,7 +226,7 @@ def plotar_comparacao_total(real, sarimax, prevs_dict, amostras=150):
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
     
-    nome_arquivo = 'grafico_comparativo_modelos.png'
+    nome_arquivo = '../plotagens/plotagem_comparativa_hibrido/grafico_comparativo_modelos.png'
     plt.savefig(nome_arquivo, dpi=300)
     print(f"\nGráfico salvo com sucesso como '{nome_arquivo}'. O deslocamento Y foi corrigido!")
 
@@ -245,5 +245,5 @@ gerar_pdf_relatorio(
     metricas=metricas_modelos, 
     mse_base=mse_base, 
     mae_base=mae_base, 
-    imagem_grafico='grafico_comparativo_modelos.png'
+    imagem_grafico='../plotagens/plotagem_comparativa_hibrido/grafico_comparativo_modelos.png'
 )

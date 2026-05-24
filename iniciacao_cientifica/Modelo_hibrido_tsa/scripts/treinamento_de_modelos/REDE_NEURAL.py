@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # 1 - Import dos dados:
-file_path: str = "./previsoes/previsoes_SARIMA_3.csv"
+file_path: str = "../previsoes/previsoes_SARIMA_3.csv"
 serie_residuo: pd.Series = pd.read_csv(file_path)["Residuo"]  # type:ignore
 
 # 2 - Divisão + Normalização:
